@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using TaskManagement.Application.Features.Admin.Interfaces;
 using TaskManagement.Application.Features.Authentication.Interfaces;
 using TaskManagement.Application.Features.Tasks.Interfaces;
 using TaskManagement.Application.Interfaces.Persistence;
@@ -67,6 +68,7 @@ public static class DependencyInjection
     configuration.GetSection(JwtSettings.SectionName));
         services.AddScoped<ITaskRepository, TaskRepository>();
         services.AddScoped<ITaskService, TaskService>();
+        services.AddScoped<IAdminService, AdminService>();
 
         return services;
     }
