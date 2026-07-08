@@ -27,9 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="BackgroundServices\" />
     <Folder Include="Interfaces\" />
-    <Folder Include="Redis\" />
   </ItemGroup>
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />

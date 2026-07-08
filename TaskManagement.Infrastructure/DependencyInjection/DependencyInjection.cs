@@ -8,11 +8,15 @@ using System.Text;
 using TaskManagement.Application.Features.Admin.Interfaces;
 using TaskManagement.Application.Features.Authentication.Interfaces;
 using TaskManagement.Application.Features.Tasks.Interfaces;
+using TaskManagement.Application.Interfaces.Background;
+using TaskManagement.Application.Interfaces.Cache;
 using TaskManagement.Application.Interfaces.Persistence;
 using TaskManagement.Infrastructure.Authentication;
+using TaskManagement.Infrastructure.BackgroundServices;
 using TaskManagement.Infrastructure.Identity;
 using TaskManagement.Infrastructure.Persistence;
 using TaskManagement.Infrastructure.Persistence.Repositories;
+using TaskManagement.Infrastructure.Redis;
 using TaskManagement.Infrastructure.Services;
 
 namespace TaskManagement.Infrastructure.DependencyInjection;
@@ -69,6 +73,14 @@ public static class DependencyInjection
         services.AddScoped<ITaskRepository, TaskRepository>();
         services.AddScoped<ITaskService, TaskService>();
         services.AddScoped<IAdminService, AdminService>();
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration =
+                configuration.GetConnectionString("Redis");
+        });
+        services.AddScoped<ICacheService, RedisCacheService>();
+        services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+        services.AddHostedService<TaskProcessingBackgroundService>();
 
         return services;
     }

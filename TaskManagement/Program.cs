@@ -1,5 +1,7 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using TaskManagement.Infrastructure.DependencyInjection;
+using TaskManagement.Infrastructure.Persistence;
 using TaskManagement.Infrastructure.Persistence.Seed;
 
 namespace TaskManagement;
@@ -32,27 +34,45 @@ public class Program
             });
 
             options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    Array.Empty<string>()
                 }
-            },
-            Array.Empty<string>()
-        }
-                                   });
+            });
         });
 
         builder.Services.AddInfrastructure(builder.Configuration);
 
-
         var app = builder.Build();
 
-        await DbSeeder.SeedAsync(app.Services);
+        using (var scope = app.Services.CreateScope())
+        {
+            var services = scope.ServiceProvider;
+
+            try
+            {
+                var context = services.GetRequiredService<ApplicationDbContext>();
+
+                await context.Database.MigrateAsync();
+
+                await DbSeeder.SeedAsync(services);
+            }
+            catch (Exception ex)
+            {
+                var logger = services
+                    .GetRequiredService<ILogger<Program>>();
+
+                logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+            }
+        }
 
         if (app.Environment.IsDevelopment())
         {
