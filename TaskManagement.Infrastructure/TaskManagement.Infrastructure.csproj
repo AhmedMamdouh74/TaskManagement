@@ -22,13 +22,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\TaskManagement.Application\TaskManagement.Application.csproj" />
     <ProjectReference Include="..\TaskManagement.Domain\TaskManagement.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Authentication\" />
     <Folder Include="BackgroundServices\" />
-    <Folder Include="Persistence\Seed\" />
+    <Folder Include="Interfaces\" />
     <Folder Include="Redis\" />
   </ItemGroup>
 	<ItemGroup>

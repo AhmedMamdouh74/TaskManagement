@@ -4,7 +4,7 @@ using TaskManagement.Infrastructure.Identity;
 
 namespace TaskManagement.Infrastructure.Persistence.Seed;
 
-public static class TaskDataSeed
+public static class DbSeeder
 {
     public static async Task SeedAsync(IServiceProvider serviceProvider)
     {
@@ -37,7 +37,12 @@ public static class TaskDataSeed
 
             if (result.Succeeded)
             {
-                await userManager.AddToRoleAsync(admin, "Admin");
+                var roleResult = await userManager.AddToRoleAsync(admin, "Admin");
+
+                if (!roleResult.Succeeded)
+                {
+                    throw new InvalidOperationException("Failed to assign Admin role.");
+                }
             }
         }
     }

@@ -5,6 +5,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using TaskManagement.Application.Features.Authentication.Interfaces;
+using TaskManagement.Infrastructure.Authentication;
 using TaskManagement.Infrastructure.Identity;
 using TaskManagement.Infrastructure.Persistence;
 
@@ -55,6 +57,10 @@ public static class DependencyInjection
         });
 
         services.AddAuthorization();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IJwtProvider, JwtProvider>();
+        services.Configure<JwtSettings>(
+    configuration.GetSection(JwtSettings.SectionName));
 
         return services;
     }

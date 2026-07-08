@@ -11,9 +11,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Common\" />
-    <Folder Include="Features\" />
-    <Folder Include="Interfaces\" />
+    <Folder Include="Features\Authentication\Services\" />
+    <Folder Include="Features\Authentication\Validators\" />
+    <Folder Include="Features\Users\" />
+    <Folder Include="Features\Tasks\" />
+    <Folder Include="Interfaces\Authentication\" />
   </ItemGroup>
 
 </Project>
