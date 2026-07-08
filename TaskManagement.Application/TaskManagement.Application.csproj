@@ -14,7 +14,6 @@
     <Folder Include="Features\Authentication\Services\" />
     <Folder Include="Features\Authentication\Validators\" />
     <Folder Include="Features\Users\" />
-    <Folder Include="Features\Tasks\" />
     <Folder Include="Interfaces\Authentication\" />
   </ItemGroup>
 
