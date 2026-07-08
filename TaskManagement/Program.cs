@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using TaskManagement.API.Middelware;
+using TaskManagement.API.Middleware;
 using TaskManagement.API.Responses;
 using TaskManagement.Infrastructure.DependencyInjection;
 using TaskManagement.Infrastructure.Persistence;

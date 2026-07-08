@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Common.Exceptions;
 using TaskManagement.Application.Common.Models;
 using TaskManagement.Application.Features.Authentication.DTOs.Requests;
@@ -22,7 +23,10 @@ namespace TaskManagement.Infrastructure.Authentication
         }
         public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request)
         {
-            var existingUser = await _userManager.FindByEmailAsync(request.Email);
+            var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+
+            if (existingUser is not null)
+                throw new ConflictException("Email already exists.");
 
             if (existingUser is not null)
             {
@@ -67,9 +71,9 @@ namespace TaskManagement.Infrastructure.Authentication
 
         public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
         {
-            var user = await _userManager.FindByEmailAsync(request.Email);
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
 
-            if (user is null)
+            if (user is null || user.IsDeleted)
                 throw new UnauthorizedException("Invalid email or password.");
 
             var validPassword = await _userManager.CheckPasswordAsync(user, request.Password);

@@ -1,61 +1,71 @@
-﻿using System.Text.Json;
-using TaskManagement.API.Responses;
+﻿using TaskManagement.API.Responses;
 using TaskManagement.Application.Common.Exceptions;
 
-namespace TaskManagement.API.Middelware
+namespace TaskManagement.API.Middleware;
+
+public class ErrorHandlingMiddleware
 {
-    public class ErrorHandlingMiddleware
+    private readonly RequestDelegate _next;
+    private readonly ILogger<ErrorHandlingMiddleware> _logger;
+
+    public ErrorHandlingMiddleware(
+        RequestDelegate next,
+        ILogger<ErrorHandlingMiddleware> logger)
     {
-        private readonly RequestDelegate request;
-        private readonly ILogger<ErrorHandlingMiddleware> logger;
+        _next = next;
+        _logger = logger;
+    }
 
-        public ErrorHandlingMiddleware(RequestDelegate _request, ILogger<ErrorHandlingMiddleware> _logger)
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
         {
-            request = _request;
-            logger = _logger;
+            await _next(context);
         }
-        public async Task InvokeAsync(HttpContext context)
+        catch (Exception ex)
         {
-            try
-            {
-                
-                await request(context);
-              
-            }
-            catch (Exception ex)
-            {
-                await HandleExceptionAsync(context, ex);
-            }
+            await HandleExceptionAsync(context, ex);
+        }
+    }
+
+    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
+    {
+        var statusCode = exception switch
+        {
+            NotFoundException => StatusCodes.Status404NotFound,
+            BadRequestException => StatusCodes.Status400BadRequest,
+            UnauthorizedException => StatusCodes.Status401Unauthorized,
+            ConflictException => StatusCodes.Status409Conflict,
+            ServerInternalException => StatusCodes.Status500InternalServerError,
+            _ => StatusCodes.Status500InternalServerError
+        };
+
+        switch (exception)
+        {
+            case NotFoundException:
+            case BadRequestException:
+            case UnauthorizedException:
+            case ConflictException:
+                _logger.LogWarning(exception, exception.Message);
+                break;
+
+            default:
+                _logger.LogError(exception, "An unexpected error occurred.");
+                break;
         }
 
-        private async Task HandleExceptionAsync(HttpContext context, Exception ex)
+        var response = new ErrorResponse
         {
-            var status = ex switch
-            {
-                NotFoundException => StatusCodes.Status404NotFound,
-                BadRequestException => StatusCodes.Status400BadRequest,
-                UnauthorizedException => StatusCodes.Status401Unauthorized,
-                ConflictException => StatusCodes.Status409Conflict,
-                ServerInternalException => StatusCodes.Status500InternalServerError,
-                _ => StatusCodes.Status500InternalServerError
-            };
-            var errorResponse = new ErrorResponse
-            {
-                StatusCode = status,
-                Message = status == StatusCodes.Status500InternalServerError ? "Internal Server Error" : ex.Message,
-                Success = false
-            };
-            logger.LogError(ex, "Unhandled exception occurred: {Message}", ex.Message);
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = status;
-          
-            
-            var options = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase // Ensures camelCase formatting for JSON properties to help frontend to deal with json data
-            };
-            var jsonResponse = JsonSerializer.Serialize(errorResponse, options);
-            await context.Response.WriteAsync(jsonResponse);
-        }
+            Success = false,
+            StatusCode = statusCode,
+            Message = statusCode == StatusCodes.Status500InternalServerError
+                ? "An unexpected error occurred."
+                : exception.Message
+        };
+
+        context.Response.StatusCode = statusCode;
+        context.Response.ContentType = "application/json";
+
+        await context.Response.WriteAsJsonAsync(response);
     }
 }

@@ -29,13 +29,18 @@ public class TaskProcessingBackgroundService : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
+            int taskId = 0;
+
             try
             {
-                var taskId = await _queue.DequeueAsync(stoppingToken);
+                // Wait until a task is available in the queue
+                taskId = await _queue.DequeueAsync(stoppingToken);
 
-                _logger.LogInformation("Processing task {TaskId}", taskId);
+                _logger.LogInformation(
+                    "Background processing started for Task {TaskId}.",
+                    taskId);
 
-                // Simulate long-running processing
+                // Simulate a long-running process
                 await Task.Delay(TimeSpan.FromSeconds(20), stoppingToken);
 
                 using var scope = _scopeFactory.CreateScope();
@@ -46,7 +51,10 @@ public class TaskProcessingBackgroundService : BackgroundService
 
                 if (task is null)
                 {
-                    _logger.LogWarning("Task {TaskId} not found.", taskId);
+                    _logger.LogWarning(
+                        "Task {TaskId} was not found during background processing.",
+                        taskId);
+
                     continue;
                 }
 
@@ -57,7 +65,7 @@ public class TaskProcessingBackgroundService : BackgroundService
                 await repository.SaveChangesAsync();
 
                 _logger.LogInformation(
-                    "Task {TaskId} status updated to {Status}.",
+                    "Task {TaskId} processed successfully. Status updated to {Status}.",
                     taskId,
                     TaskItemStatus.InProgress);
             }
@@ -70,7 +78,8 @@ public class TaskProcessingBackgroundService : BackgroundService
             {
                 _logger.LogError(
                     ex,
-                    "An error occurred while processing a background task.");
+                    "An unexpected error occurred while processing Task {TaskId}.",
+                    taskId);
             }
         }
 

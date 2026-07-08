@@ -66,7 +66,13 @@ public class AdminService : IAdminService
         if (user is null)
             throw new NotFoundException("User not found.");
 
-        var result = await _userManager.DeleteAsync(user);
+        if (user.IsDeleted)
+            throw new BadRequestException("User has already been deleted.");
+
+        user.IsDeleted = true;
+        user.DeletedAt = DateTime.UtcNow;
+
+        var result = await _userManager.UpdateAsync(user);
 
         if (!result.Succeeded)
             throw new BadRequestException(
