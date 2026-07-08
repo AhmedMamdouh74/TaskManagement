@@ -1,4 +1,5 @@
-﻿using TaskManagement.Application.Features.Tasks.DTOs.Requests;
+﻿using TaskManagement.Application.Common.Exceptions;
+using TaskManagement.Application.Features.Tasks.DTOs.Requests;
 using TaskManagement.Application.Features.Tasks.DTOs.Responses;
 using TaskManagement.Application.Features.Tasks.Interfaces;
 using TaskManagement.Application.Interfaces.Background;
@@ -6,7 +7,7 @@ using TaskManagement.Application.Interfaces.Cache;
 using TaskManagement.Application.Interfaces.Persistence;
 using TaskManagement.Domain.Entities;
 
-namespace TaskManagement.Infrastructure.Services;
+namespace TaskManagement.Application.Features.Tasks.Services;
 
 public class TaskService : ITaskService
 {
@@ -31,7 +32,7 @@ public class TaskService : ITaskService
             DateTime.UtcNow);
 
         if (exists)
-            throw new InvalidOperationException(
+            throw new DuplicateTaskException(
                 "You already have a task with the same title today.");
 
         var task = new TaskItem(
@@ -76,10 +77,11 @@ public class TaskService : ITaskService
         var task = await _taskRepository.GetByIdAsync(id);
 
         if (task is null)
-            throw new InvalidOperationException("Task not found.");
+            throw new NotFoundException("Task not found.");
 
         if (task.UserId != userId)
-            throw new UnauthorizedAccessException();
+            throw new ForbiddenException(
+      "You cannot access another user's task.");
 
         var response = Map(task);
 
@@ -99,10 +101,11 @@ public class TaskService : ITaskService
         var task = await _taskRepository.GetByIdAsync(id);
 
         if (task is null)
-            throw new InvalidOperationException("Task not found.");
+            throw new NotFoundException("Task not found.");
 
         if (task.UserId != userId)
-            throw new UnauthorizedAccessException();
+            throw new ForbiddenException(
+      "You cannot access another user's task.");
 
         task.UpdateStatus(request.Status);
 

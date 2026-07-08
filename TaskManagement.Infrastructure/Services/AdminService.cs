@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using TaskManagement.Application.Common.Exceptions;
 using TaskManagement.Application.Features.Admin.DTOs.Requests;
 using TaskManagement.Application.Features.Admin.DTOs.Responses;
 using TaskManagement.Application.Features.Admin.Interfaces;
@@ -33,7 +34,7 @@ public class AdminService : IAdminService
         var existingUser = await _userManager.FindByEmailAsync(request.Email);
 
         if (existingUser is not null)
-            throw new InvalidOperationException("User already exists.");
+            throw new ConflictException("User already exists.");
 
         var user = new ApplicationUser
         {
@@ -45,7 +46,7 @@ public class AdminService : IAdminService
         var result = await _userManager.CreateAsync(user, request.Password);
 
         if (!result.Succeeded)
-            throw new InvalidOperationException(
+            throw new BadRequestException(
                 string.Join(", ", result.Errors.Select(e => e.Description)));
 
         await _userManager.AddToRoleAsync(user, "User");
@@ -63,12 +64,12 @@ public class AdminService : IAdminService
         var user = await _userManager.FindByIdAsync(id.ToString());
 
         if (user is null)
-            throw new InvalidOperationException("User not found.");
+            throw new NotFoundException("User not found.");
 
         var result = await _userManager.DeleteAsync(user);
 
         if (!result.Succeeded)
-            throw new InvalidOperationException(
+            throw new BadRequestException(
                 string.Join(", ", result.Errors.Select(e => e.Description)));
     }
 }

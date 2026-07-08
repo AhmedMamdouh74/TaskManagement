@@ -1,14 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TaskManagement.API.Controllers;
 using TaskManagement.Application.Features.Admin.DTOs.Requests;
+using TaskManagement.Application.Features.Admin.DTOs.Responses;
 using TaskManagement.Application.Features.Admin.Interfaces;
-
-namespace TaskManagement.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = "Admin")]
-public class AdminController : ControllerBase
+public class AdminController : BaseAPIController
 {
     private readonly IAdminService _adminService;
 
@@ -18,17 +18,20 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("users")]
-    public async Task<IActionResult> GetUsers()
+    public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetUsers()
     {
-        return Ok(await _adminService.GetUsersAsync());
+        var users = await _adminService.GetUsersAsync();
+
+        return Success(users, "Users retrieved successfully.");
     }
 
     [HttpPost("users")]
-    public async Task<IActionResult> CreateUser(CreateUserRequestDto request)
+    public async Task<ActionResult<UserResponseDto>> CreateUser(
+        [FromBody] CreateUserRequestDto request)
     {
         var user = await _adminService.CreateUserAsync(request);
 
-        return Ok(user);
+        return CreatedSuccess(user, "User created successfully.");
     }
 
     [HttpDelete("users/{id:int}")]

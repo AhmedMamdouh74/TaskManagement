@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using TaskManagement.Application.Common.Exceptions;
 using TaskManagement.Application.Common.Models;
 using TaskManagement.Application.Features.Authentication.DTOs.Requests;
 using TaskManagement.Application.Features.Authentication.DTOs.Responses;
@@ -25,7 +26,7 @@ namespace TaskManagement.Infrastructure.Authentication
 
             if (existingUser is not null)
             {
-                throw new InvalidOperationException("Email already exists.");
+                throw new ConflictException("Email already exists.");
             }
 
             var user = new ApplicationUser
@@ -39,7 +40,7 @@ namespace TaskManagement.Infrastructure.Authentication
 
             if (!result.Succeeded)
             {
-                throw new InvalidOperationException(
+                throw new BadRequestException(
                     string.Join(", ", result.Errors.Select(e => e.Description)));
             }
 
@@ -69,12 +70,12 @@ namespace TaskManagement.Infrastructure.Authentication
             var user = await _userManager.FindByEmailAsync(request.Email);
 
             if (user is null)
-                throw new InvalidOperationException("Invalid email or password.");
+                throw new UnauthorizedException("Invalid email or password.");
 
             var validPassword = await _userManager.CheckPasswordAsync(user, request.Password);
 
             if (!validPassword)
-                throw new InvalidOperationException("Invalid email or password.");
+                throw new UnauthorizedException("Invalid email or password.");
 
             var roles = await _userManager.GetRolesAsync(user);
 
@@ -100,8 +101,7 @@ namespace TaskManagement.Infrastructure.Authentication
             var user = await _userManager.FindByIdAsync(userId.ToString());
 
             if (user is null)
-                throw new InvalidOperationException("User not found.");
-
+                throw new NotFoundException("User not found.");
             var roles = await _userManager.GetRolesAsync(user);
 
             return new UserProfileResponseDto

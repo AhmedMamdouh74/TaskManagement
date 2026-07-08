@@ -1,5 +1,8 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using TaskManagement.API.Middelware;
+using TaskManagement.API.Responses;
 using TaskManagement.Infrastructure.DependencyInjection;
 using TaskManagement.Infrastructure.Persistence;
 using TaskManagement.Infrastructure.Persistence.Seed;
@@ -50,6 +53,24 @@ public class Program
         });
 
         builder.Services.AddInfrastructure(builder.Configuration);
+        builder.Services.Configure<ApiBehaviorOptions>(options =>
+        {
+            options.InvalidModelStateResponseFactory = actionContext =>
+            {
+                var errors = actionContext.ModelState
+                .Where(e => e.Value.Errors.Count > 0)
+                .SelectMany(x => x.Value.Errors)
+                .Select(x => x.ErrorMessage).ToArray();
+                var errorResponse = new ValidationErrorReponse
+                {
+                    Message = "invalid data",
+                    Errors = errors,
+                    StatusCode = 400
+
+                };
+                return new BadRequestObjectResult(errorResponse);
+            };
+        });
 
         var app = builder.Build();
 
@@ -79,13 +100,14 @@ public class Program
             app.UseSwagger();
             app.UseSwaggerUI();
         }
-
+        app.UseMiddleware<ErrorHandlingMiddleware>();
         app.UseHttpsRedirection();
 
         app.UseAuthentication();
         app.UseAuthorization();
 
         app.MapControllers();
+        app.UseMiddleware<NotFoundEndpointMiddleware>();
 
         app.Run();
     }

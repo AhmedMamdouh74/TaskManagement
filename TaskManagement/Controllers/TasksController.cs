@@ -1,15 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using TaskManagement.Application.Features.Tasks.DTOs.Requests;
+using TaskManagement.Application.Features.Tasks.DTOs.Responses;
 using TaskManagement.Application.Features.Tasks.Interfaces;
 
-namespace TaskManagement.Api.Controllers;
-
+namespace TaskManagement.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class TasksController : ControllerBase
+public class TasksController : BaseAPIController
 {
     private readonly ITaskService _taskService;
 
@@ -19,33 +18,27 @@ public class TasksController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(CreateTaskRequestDto request)
+    public async Task<ActionResult<TaskResponseDto>> Create(CreateTaskRequestDto request)
     {
-        var userId = GetCurrentUserId();
+        var result = await _taskService.CreateAsync(UserId, request);
 
-        var result = await _taskService.CreateAsync(userId, request);
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+        return CreatedSuccess(result, "Task created successfully.");
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<ActionResult<IEnumerable<TaskResponseDto>>> GetAll()
     {
-        var userId = GetCurrentUserId();
+        var result = await _taskService.GetAllAsync(UserId);
 
-        var result = await _taskService.GetAllAsync(userId);
-
-        return Ok(result);
+        return Success(result, "Tasks retrieved successfully.");
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<ActionResult<TaskResponseDto>> GetById(int id)
     {
-        var userId = GetCurrentUserId();
+        var result = await _taskService.GetByIdAsync(id, UserId);
 
-        var result = await _taskService.GetByIdAsync(id, userId);
-
-        return Ok(result);
+        return Success(result, "Task retrieved successfully.");
     }
 
     [HttpPut("{id:int}/status")]
@@ -53,20 +46,8 @@ public class TasksController : ControllerBase
         int id,
         UpdateTaskStatusRequestDto request)
     {
-        var userId = GetCurrentUserId();
-
-        await _taskService.UpdateStatusAsync(id, userId, request);
+        await _taskService.UpdateStatusAsync(id, UserId, request);
 
         return NoContent();
-    }
-
-    private int GetCurrentUserId()
-    {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (string.IsNullOrWhiteSpace(userId))
-            throw new UnauthorizedAccessException();
-
-        return int.Parse(userId);
     }
 }
